@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MathMate — Risolutore per la Media</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f1a;
+    --card: #16162a;
+    --card2: #1e1e38;
+    --accent: #7c6dfa;
+    --accent2: #fa6d9f;
+    --accent3: #6dfabc;
+    --accent4: #fad06d;
+    --text: #e8e8f8;
+    --muted: #8888bb;
+    --border: #2a2a4a;
+    --step-bg: #1a1a2e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background: 
+      radial-gradient(ellipse 60% 40% at 20% 20%, rgba(124,109,250,0.12) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 50% at 80% 80%, rgba(250,109,159,0.10) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 60% at 50% 50%, rgba(109,250,188,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .container { max-width: 780px; margin: 0 auto; padding: 24px 16px 60px; position: relative; z-index: 1; }
+
+  /* HEADER */
+  header { text-align: center; margin-bottom: 36px; }
+  .logo { font-size: 2.6rem; font-weight: 900; letter-spacing: -1px; }
+  .logo span:nth-child(1) { color: var(--accent); }
+  .logo span:nth-child(2) { color: var(--accent2); }
+  .logo span:nth-child(3) { color: var(--accent3); }
+  .tagline { color: var(--muted); font-size: 1rem; margin-top: 4px; font-weight: 600; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 8px; margin-bottom: 24px; background: var(--card); border-radius: 16px; padding: 6px; }
+  .tab {
+    flex: 1; padding: 10px 8px; border: none; border-radius: 12px; font-family: 'Nunito', sans-serif;
+    font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: all .2s;
+    background: transparent; color: var(--muted);
+  }
+  .tab.active { background: var(--accent); color: #fff; box-shadow: 0 4px 16px rgba(124,109,250,0.4); }
+  .tab:hover:not(.active) { background: var(--border); color: var(--text); }
+
+  /* INPUT CARD */
+  .input-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+    padding: 24px; margin-bottom: 24px;
+  }
+  .input-label { font-size: 0.85rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .input-row { display: flex; gap: 10px; align-items: flex-end; }
+  textarea {
+    flex: 1; background: var(--step-bg); border: 1.5px solid var(--border); border-radius: 12px;
+    color: var(--text); font-family: 'Nunito', sans-serif; font-size: 1.05rem; padding: 12px 14px;
+    resize: vertical; min-height: 60px; outline: none; transition: border .2s;
+  }
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--muted); }
+
+  .btn-solve {
+    padding: 14px 28px; background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: 14px; color: #fff; font-family: 'Nunito', sans-serif;
+    font-size: 1.05rem; font-weight: 800; cursor: pointer; white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(124,109,250,0.4); transition: all .2s; letter-spacing: .3px;
+  }
+  .btn-solve:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(124,109,250,0.5); }
+  .btn-solve:active { transform: scale(.97); }
+  .btn-solve:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+  /* PHOTO */
+  .photo-area {
+    margin-top: 14px; border: 2px dashed var(--border); border-radius: 14px;
+    padding: 18px; text-align: center; cursor: pointer; transition: border .2s;
+  }
+  .photo-area:hover { border-color: var(--accent); }
+  .photo-area input { display: none; }
+  .photo-icon { font-size: 2rem; margin-bottom: 6px; }
+  .photo-label { font-size: 0.9rem; color: var(--muted); font-weight: 600; }
+  .photo-preview { max-width: 100%; border-radius: 10px; margin-top: 12px; max-height: 200px; object-fit: contain; display: none; }
+  .photo-name { font-size: 0.85rem; color: var(--accent3); margin-top: 6px; font-weight: 700; display: none; }
+
+  /* EXAMPLES */
+  .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .ex-chip {
+    padding: 6px 13px; background: var(--step-bg); border: 1px solid var(--border); border-radius: 20px;
+    font-size: 0.82rem; font-weight: 700; color: var(--muted); cursor: pointer; font-family: 'JetBrains Mono', monospace;
+    transition: all .15s;
+  }
+  .ex-chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(124,109,250,0.08); }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 40px 20px; display: none; }
+  .spinner { width: 48px; height: 48px; border: 4px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { color: var(--muted); font-weight: 700; font-size: 1rem; }
+
+  /* RESULT */
+  .result-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+    padding: 24px; display: none; animation: fadeUp .4s ease;
+  }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  .result-title { font-size: 1rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 18px; }
+
+  /* STEPS */
+  .steps-list { display: flex; flex-direction: column; gap: 12px; }
+  .step {
+    background: var(--step-bg); border-radius: 14px; padding: 16px 18px;
+    border-left: 4px solid var(--accent); animation: fadeUp .3s ease both;
+  }
+  .step.geo-formula { border-left-color: var(--accent3); }
+  .step.geo-segment { border-left-color: var(--accent4); }
+  .step.geo-value { border-left-color: var(--accent2); }
+  .step.final-step { border-left-color: var(--accent2); background: rgba(250,109,159,0.07); }
+  .step-num {
+    font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px;
+    margin-bottom: 8px;
+  }
+  .step.geo-formula .step-num { color: var(--accent3); }
+  .step.geo-segment .step-num { color: var(--accent4); }
+  .step.geo-value .step-num { color: var(--accent2); }
+  .step:not(.geo-formula):not(.geo-segment):not(.geo-value):not(.final-step) .step-num { color: var(--accent); }
+  .step.final-step .step-num { color: var(--accent2); }
+  .step-desc { font-size: 0.88rem; color: var(--muted); margin-bottom: 10px; font-weight: 600; }
+  .step-expr {
+    font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; color: var(--text);
+    background: rgba(255,255,255,0.04); border-radius: 8px; padding: 10px 14px;
+    word-break: break-word; line-height: 1.7;
+  }
+  .step-expr .highlight { color: var(--accent4); font-weight: 700; }
+  .step-expr .result { color: var(--accent3); font-weight: 800; }
+
+  /* ANSWER BOX */
+  .answer-box {
+    margin-top: 18px; background: linear-gradient(135deg, rgba(124,109,250,0.12), rgba(250,109,159,0.10));
+    border: 1.5px solid var(--accent); border-radius: 14px; padding: 18px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .answer-emoji { font-size: 2rem; }
+  .answer-label { font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .answer-value { font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; color: var(--accent3); font-weight: 700; margin-top: 2px; }
+
+  /* ERROR */
+  .error-box { background: rgba(250,109,109,0.10); border: 1.5px solid #fa6d6d; border-radius: 14px; padding: 16px 18px; margin-top: 16px; color: #fa6d6d; font-weight: 700; display: none; }
+
+  /* NOTE */
+  .note { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: 28px; font-weight: 600; }
+
+  @media(max-width:500px) {
+    .input-row { flex-direction: column; }
+    .btn-solve { width: 100%; }
+    .logo { font-size: 2rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">
+      <span>Math</span><span>Mate</span><span> ✦</span>
+    </div>
+    <div class="tagline">Il tuo assistente di matematica per la 2ª–3ª media</div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="setTab('expr')" id="tab-expr">🔢 Espressioni</button>
+    <button class="tab" onclick="setTab('geo')" id="tab-geo">📐 Geometria</button>
+  </div>
+
+  <div class="input-card">
+    <div class="input-label" id="input-label">Scrivi o carica un'espressione</div>
+    <div class="input-row">
+      <textarea id="problem-input" placeholder="Es: 3 × (4 + 2²) − 8 ÷ 2" rows="2"></textarea>
+      <button class="btn-solve" id="btn-solve" onclick="solve()">Risolvi ✦</button>
+    </div>
+
+    <!-- ESEMPI DINAMICI -->
+    <div class="examples" id="examples-list"></div>
+
+    <!-- FOTO -->
+    <div class="photo-area" onclick="document.getElementById('photo-input').click()">
+      <input type="file" id="photo-input" accept="image/*" onchange="handlePhoto(event)">
+      <div class="photo-icon">📷</div>
+      <div class="photo-label">Carica una foto del problema (opzionale)</div>
+      <img id="photo-preview" class="photo-preview">
+      <div id="photo-name" class="photo-name"></div>
+    </div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text">Sto risolvendo il problema…</div>
+  </div>
+
+  <div class="result-card" id="result-card">
+    <div class="result-title">✦ Soluzione passo per passo</div>
+    <div class="steps-list" id="steps-list"></div>
+    <div class="answer-box" id="answer-box">
+      <div class="answer-emoji">🎯</div>
+      <div>
+        <div class="answer-label">Risposta finale</div>
+        <div class="answer-value" id="answer-value">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="error-box" id="error-box"></div>
+
+  <div class="note">Powered by Claude AI · MathMate per la classe 💜</div>
+</div>
+
+<script>
+let currentTab = 'expr';
+let photoBase64 = null;
+let photoType = null;
+
+const examplesData = {
+  expr: [
+    '3 × (4 + 2²) − 8 ÷ 2',
+    '(5² − 3 × 4) ÷ (2 + 3)',
+    '2³ + 4 × (6 − 2²)',
+    '(12 ÷ 4 + 3²) × 2 − 1',
+    '5 × [3 + (8 − 2²)] ÷ 5',
+  ],
+  geo: [
+    'Area triangolo: base 8 cm, altezza 5 cm',
+    'Perimetro rettangolo: l=12 cm, h=7 cm',
+    'Area cerchio: raggio 6 cm',
+    'Volume cubo: lato 4 cm',
+    'Ipotenusa triangolo rettangolo: cateti 3 e 4 cm',
+  ]
+};
+
+function setTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  const label = document.getElementById('input-label');
+  const ta = document.getElementById('problem-input');
+  if (tab === 'expr') {
+    label.textContent = 'Scrivi o carica un\'espressione';
+    ta.placeholder = 'Es: 3 × (4 + 2²) − 8 ÷ 2';
+  } else {
+    label.textContent = 'Descrivi il problema di geometria';
+    ta.placeholder = 'Es: Area triangolo con base 8 cm e altezza 5 cm';
+  }
+  renderExamples();
+  clearResult();
+}
+
+function renderExamples() {
+  const list = document.getElementById('examples-list');
+  list.innerHTML = '';
+  examplesData[currentTab].forEach(ex => {
+    const chip = document.createElement('div');
+    chip.className = 'ex-chip';
+    chip.textContent = ex;
+    chip.onclick = () => {
+      document.getElementById('problem-input').value = ex;
+    };
+    list.appendChild(chip);
+  });
+}
+
+function handlePhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const preview = document.getElementById('photo-preview');
+  const nameEl = document.getElementById('photo-name');
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    preview.src = ev.target.result;
+    preview.style.display = 'block';
+    nameEl.textContent = '📎 ' + file.name;
+    nameEl.style.display = 'block';
+    // extract base64
+    const b64 = ev.target.result.split(',')[1];
+    photoBase64 = b64;
+    photoType = file.type;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearResult() {
+  document.getElementById('result-card').style.display = 'none';
+  document.getElementById('error-box').style.display = 'none';
+  document.getElementById('steps-list').innerHTML = '';
+}
+
+async function solve() {
+  const input = document.getElementById('problem-input').value.trim();
+  if (!input && !photoBase64) {
+    showError('Scrivi un problema o carica una foto! 📸');
+    return;
+  }
+
+  clearResult();
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('btn-solve').disabled = true;
+
+  const isGeo = currentTab === 'geo';
+
+  let systemPrompt = '';
+  let userContent = [];
+
+  if (isGeo) {
+    systemPrompt = `Sei un professore di matematica italiano per studenti di 2ª–3ª media. 
+Risolvi SOLO problemi di geometria piana e solida.
+Rispondi SEMPRE in italiano con questo formato JSON esatto (nient'altro, nessun markdown):
+{
+  "tipo": "geometria",
+  "steps": [
+    { "tipo": "formula", "titolo": "Passaggio X – Formula", "descrizione": "spiega la formula", "espressione": "A = b × h / 2" },
+    { "tipo": "segmenti", "titolo": "Passaggio X – Con i segmenti", "descrizione": "sostituisci con lettere", "espressione": "A = b × h / 2" },
+    { "tipo": "valori", "titolo": "Passaggio X – Con i valori reali", "descrizione": "sostituisci con numeri", "espressione": "A = 8 × 5 / 2" },
+    { "tipo": "calcolo", "titolo": "Passaggio X – Calcolo", "descrizione": "spiega il calcolo", "espressione": "A = 40 / 2" },
+    ...
+  ],
+  "risposta": "A = 20 cm²",
+  "unita": "cm²"
+}
+REGOLA: ogni problema deve sempre avere: 1) step con la FORMULA teorica, 2) step con i SEGMENTI (lettere), 3) step con i VALORI REALI, poi i calcoli. Mostra tutta l'espressione completa ad ogni passo, non solo la parte che cambia.`;
+  } else {
+    systemPrompt = `Sei un professore di matematica italiano per studenti di 2ª–3ª media.
+Risolvi espressioni numeriche mostrando OGNI singolo passaggio con l'INTERA espressione.
+Regola fondamentale: ad ogni passo mostra tutta l'espressione, non solo la parte modificata.
+Rispondi SOLO in JSON (nessun markdown, nessun testo fuori):
+{
+  "tipo": "espressione",
+  "steps": [
+    { "titolo": "Passaggio 1 – Esponenti", "descrizione": "Calcola prima le potenze", "espressione": "3 × (4 + 4) − 8 ÷ 2" },
+    { "titolo": "Passaggio 2 – Parentesi", "descrizione": "Esegui le operazioni tra parentesi", "espressione": "3 × 8 − 8 ÷ 2" },
+    ...
+  ],
+  "risposta": "20",
+  "unita": ""
+}
+Mostra l'espressione INTERA ogni volta, evidenziando solo cosa è cambiato rispetto al passo prima con [=>].`;
+  }
+
+  if (photoBase64) {
+    userContent.push({
+      type: 'image',
+      source: { type: 'base64', media_type: photoType || 'image/jpeg', data: photoBase64 }
+    });
+    userContent.push({
+      type: 'text',
+      text: input ? `Problema: ${input}\n\nRisolvi il problema mostrato nell'immagine e/o nel testo.` : 'Risolvi il problema mostrato nell\'immagine.'
+    });
+  } else {
+    userContent.push({ type: 'text', text: input });
+  }
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userContent }]
+      })
+    });
+
+    const data = await response.json();
+    const raw = data.content?.map(b => b.text || '').join('') || '';
+
+    // parse JSON safely
+    let parsed;
+    try {
+      const clean = raw.replace(/```json|```/g, '').trim();
+      parsed = JSON.parse(clean);
+    } catch {
+      throw new Error('Non ho capito il formato della risposta. Riprova! 🤔');
+    }
+
+    renderResult(parsed);
+
+  } catch (err) {
+    showError(err.message || 'Errore sconosciuto. Riprova!');
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('btn-solve').disabled = false;
+  }
+}
+
+function renderResult(parsed) {
+  const stepsList = document.getElementById('steps-list');
+  stepsList.innerHTML = '';
+
+  const steps = parsed.steps || [];
+  steps.forEach((step, i) => {
+    const div = document.createElement('div');
+    div.className = 'step';
+    if (parsed.tipo === 'geometria') {
+      if (step.tipo === 'formula') div.classList.add('geo-formula');
+      else if (step.tipo === 'segmenti') div.classList.add('geo-segment');
+      else if (step.tipo === 'valori') div.classList.add('geo-value');
+    }
+    if (i === steps.length - 1) div.classList.add('final-step');
+    div.style.animationDelay = (i * 0.07) + 's';
+
+    const expr = step.espressione || '';
+    // highlight [=>] parts
+    const highlighted = expr.replace(/\[=>\]/g, '<span class="highlight">⟹</span>')
+                            .replace(/=\s*([^=\n]+)$/, '= <span class="result">$1</span>');
+
+    div.innerHTML = `
+      <div class="step-num">${step.titolo || ('Passo ' + (i+1))}</div>
+      ${step.descrizione ? `<div class="step-desc">${step.descrizione}</div>` : ''}
+      <div class="step-expr">${highlighted}</div>
+    `;
+    stepsList.appendChild(div);
+  });
+
+  document.getElementById('answer-value').textContent = (parsed.risposta || '—') + (parsed.unita ? ' ' + parsed.unita : '');
+  document.getElementById('result-card').style.display = 'block';
+  document.getElementById('result-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function showError(msg) {
+  const box = document.getElementById('error-box');
+  box.textContent = '⚠️ ' + msg;
+  box.style.display = 'block';
+}
+
+// init
+renderExamples();
+document.getElementById('problem-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); solve(); }
+});
+</script>
+</body>
+</html>
