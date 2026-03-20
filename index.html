@@ -384,7 +384,7 @@ Mostra l'espressione INTERA ogni volta, evidenziando solo cosa è cambiato rispe
     // parse JSON safely
     let parsed;
     try {
-      const clean = raw.replace(/```json|```/g, '').trim();
+      const clean = (raw.match(/{[\s\S]*}/) || [raw])[0].replace(/```json|```/g, '').trim();
       parsed = JSON.parse(clean);
     } catch {
       throw new Error('Non ho capito il formato della risposta. Riprova! 🤔');
